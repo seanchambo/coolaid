@@ -1,0 +1,5 @@
+
+type User @constraints(unique: [{ name: "unique", fields: ["id"] }]) {
+  id: ID!
+  name: String
+}
