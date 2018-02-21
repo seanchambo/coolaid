@@ -32,7 +32,9 @@ class Directive {
 }
 
 class Field {
-  constructor(field) {
+  constructor(document, objectType, field) {
+    this.document = document;
+    this.objectType = objectType;
     this.field = field;
   }
 
@@ -41,7 +43,9 @@ class Field {
   }
 
   getType() {
-    return this.isRequired() ? this.field.type.type : this.field.type;
+    return this.isRequired() ? (
+      this.isList() ? this.field.type.type.type.type : this.field.type.type
+    ) : this.field.type;
   }
   getTypeName() {
     return this.getType().name.value;
@@ -55,6 +59,33 @@ class Field {
   }
   isList() {
     return this.isRequired() ? this.field.type.type.kind === 'ListType' : this.field.type.kind === 'ListType';
+  }
+  isEnum() {
+    return !!this.document.enumFieldOf(this)
+  }
+  getEnum() {
+    return this.document.enumFieldOf(this);
+  }
+  isRelation() {
+    return !!this.document.relatedFieldOf(this.objectType, this);
+  }
+  getRelation() {
+    return this.document.relatedFieldOf(this.objectType, this);
+  }
+  getRelationTableName() {
+    return this.getRelation().objectType.getName();
+  }
+  isOneToOneRelation() {
+    return !this.isList() && !this.getRelation().isList();
+  }
+  isOneToManyRelation() {
+    return !this.isList() && this.getRelation().isList();
+  }
+  isManyToOneRelation() {
+    return this.isList() && !this.getRelation().isList();
+  }
+  isManyToManyRelation() {
+    return this.isList() && this.getRelation().isList();
   }
 
   getDirectives() {
@@ -81,7 +112,8 @@ class Field {
 }
 
 class ObjectType {
-  constructor(objectType) {
+  constructor(document, objectType) {
+    this.document = document;
     this.objectType = objectType;
   }
 
@@ -97,13 +129,19 @@ class ObjectType {
   }
 
   getFields() {
-    return this.objectType.fields.map(field => new Field(field));
+    return this.objectType.fields.map(field => new Field(this.document, this, field));
   }
   getField(name) {
-    return this.getFields().filter(field => field.getName() === name);
+    return this.getFields().find(field => field.getName() === name);
   }
   getScalarTypeFields() {
     return this.getFields().filter(field => field.isScalarType());
+  }
+  getEnumFields() {
+    return this.getFields().filter(field => field.isEnum());
+  }
+  getRelationFields() {
+    return this.getFields().filter(field => field.isRelation());
   }
 
   hasConstraints() {
@@ -135,7 +173,8 @@ class ObjectType {
 }
 
 class EnumType {
-  constructor(enumType) {
+  constructor(document, enumType) {
+    this.document = document;
     this.enumType = enumType;
   }
 
@@ -166,7 +205,7 @@ class Document {
   getObjectTypes() {
     return this.document.definitions
       .filter(definition => definition.kind === 'ObjectTypeDefinition')
-      .map(objectType => new ObjectType(objectType));
+      .map(objectType => new ObjectType(this, objectType));
   }
   getObjectType(name) {
     return this.getObjectTypes().find(objectType => objectType.getName() === name);
@@ -178,7 +217,7 @@ class Document {
   getEnumTypes() {
     return this.document.definitions
       .filter(definition => definition.kind === 'EnumTypeDefinition')
-      .map(enumType => new EnumType(enumType));
+      .map(enumType => new EnumType(this, enumType));
   }
   getEnumType(name) {
     return this.getEnumTypes().find(enumType => enumType.getName() === name);
@@ -191,9 +230,13 @@ class Document {
     return this.getObjectType(name) || this.getEnumType(name);
   }
 
+  enumFieldOf(fieldDefinition) {
+    return this.getEnumType(fieldDefinition.getTypeName());
+  }
+
   relatedFieldOf(objectType, fieldDefinition) {
     const relatedObjectType = this.getObjectType(fieldDefinition.getTypeName());
-    return relatedObjectType.getField(objectType.getName());
+    return relatedObjectType && relatedObjectType.getFields().find(field => field.getTypeName() === objectType.getName());
   }
 }
 
