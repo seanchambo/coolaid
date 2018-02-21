@@ -4,12 +4,18 @@ type User @constraints(unique: [{ fields: ["id"] }, { fields: ["name", "city"] }
   name: String @maxLength(value: 200)
   city: String @defaultValue(value: "Sean")
   posts: [Post!]!
+  comments: [Comment!]!
 }
 
 type Post {
   id: ID! @hidden
   user: User!
   position: Position!
+}
+
+type Comment {
+  id: ID!
+  users: [User!]!
 }
 
 enum Position {

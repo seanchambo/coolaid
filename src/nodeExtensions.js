@@ -43,9 +43,10 @@ class Field {
   }
 
   getType() {
-    return this.isRequired() ? (
-      this.isList() ? this.field.type.type.type.type : this.field.type.type
-    ) : this.field.type;
+    if (this.isRequired()) {
+      return this.isList() ? this.field.type.type.type.type : this.field.type.type;
+    }
+    return this.field.type;
   }
   getTypeName() {
     return this.getType().name.value;
@@ -61,7 +62,7 @@ class Field {
     return this.isRequired() ? this.field.type.type.kind === 'ListType' : this.field.type.kind === 'ListType';
   }
   isEnum() {
-    return !!this.document.enumFieldOf(this)
+    return !!this.document.enumFieldOf(this);
   }
   getEnum() {
     return this.document.enumFieldOf(this);
@@ -108,6 +109,16 @@ class Field {
   getMaxLength() {
     return this.hasMaxLength() ?
       this.getDirective('maxLength').getArgument('value').getValue().value : 255;
+  }
+
+  hasRelationDirective() {
+    return !!this.getDirective('relation');
+  }
+  hasRelationName() {
+    return !!(this.hasRelationDirective() && this.getDirective('relation').getArgument('name'));
+  }
+  getRelationName() {
+    return this.getDirective('relation').getArgument('name').getValue().value;
   }
 }
 
@@ -236,7 +247,50 @@ class Document {
 
   relatedFieldOf(objectType, fieldDefinition) {
     const relatedObjectType = this.getObjectType(fieldDefinition.getTypeName());
-    return relatedObjectType && relatedObjectType.getFields().find(field => field.getTypeName() === objectType.getName());
+    if (relatedObjectType) {
+      let field;
+      if (fieldDefinition.hasRelationName()) {
+        field = relatedObjectType.getFields().find(potentialField =>
+          potentialField.getTypeName() === objectType.getName() &&
+          potentialField.hasRelationName() &&
+          potentialField.getRelationName() === fieldDefinition.getRelationName());
+      } else {
+        field = relatedObjectType.getFields().find(potentialField =>
+          potentialField.getTypeName() === objectType.getName() && !potentialField.hasRelationName());
+      }
+
+      if (!field) {
+        throw new Error(`${fieldDefinition.getName()} does not have a matching field on table ${relatedObjectType.getName()}`);
+      }
+
+      return field;
+    }
+    return null;
+  }
+
+  checkDuplicateRelationNames() {
+    const nameCounts = this.getRelationNames().reduce((acc, name) => {
+      if (acc[name]) { acc[name] += 1; } else { acc[name] = 1; }
+      return acc;
+    }, {});
+
+    Object.keys(nameCounts).forEach((key) => {
+      if (nameCounts[key] < 2) { throw new Error(`Ambigious relation name ${key}`); } else if (nameCounts[key] > 2) { throw new Error(`Duplicate relation name of ${key}`); }
+    });
+  }
+
+  getRelationNames() {
+    let names = [];
+
+    this.getObjectTypes().forEach((objectType) => {
+      const relationNames = objectType.getRelationFields()
+        .filter(field => field.hasRelationName())
+        .map(field => field.getRelationName());
+
+      names = [...names, ...relationNames];
+    });
+
+    return names;
   }
 }
 

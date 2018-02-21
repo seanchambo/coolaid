@@ -9,7 +9,9 @@ const parseSchema = async (fileName) => {
     const source = new Source(contents);
     const document = new Document(parse(source));
 
-    new SqlSchemaBuilder(document).generate();
+    document.checkDuplicateRelationNames();
+
+    console.log(new SqlSchemaBuilder(document).generate());
   });
 };
 
