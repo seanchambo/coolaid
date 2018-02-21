@@ -5,9 +5,9 @@ const scalarTypes = [
   'Boolean',
   'DateTime',
   'ID',
-  'Relation'
+  'Relation',
 ];
 
-const isScalarType = name => scalarTypes.find((type) => type === name);
+const isScalarType = name => scalarTypes.find(type => type === name);
 
 export { isScalarType };

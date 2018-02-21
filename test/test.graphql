@@ -1,11 +1,12 @@
 
-type User @constraints(unique: [{ name: "unique", fields: ["id"] }]) {
+type User @constraints(unique: [{ fields: ["id"] }, { fields: ["name", "city"] }]) {
   id: ID!
   name: String
+  city: String
 }
 
 type Post {
-  id: ID!
+  id: ID! @hidden
   user: User!
 }
 
