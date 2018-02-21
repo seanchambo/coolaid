@@ -7,7 +7,7 @@ const generateField = (table, field) => {
       newField = table.increments(field.getName());
       break;
     case 'String':
-      newField = table.string(field.getName());
+      newField = table.string(field.getName(), field.getMaxLength());
       break;
     case 'Int':
       newField = table.integer(field.getName());

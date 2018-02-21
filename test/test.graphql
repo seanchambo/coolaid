@@ -1,8 +1,8 @@
 
 type User @constraints(unique: [{ fields: ["id"] }, { fields: ["name", "city"] }]) {
   id: ID!
-  name: String
-  city: String
+  name: String @maxLength(value: 200)
+  city: String @defaultValue(value: "Sean")
 }
 
 type Post {

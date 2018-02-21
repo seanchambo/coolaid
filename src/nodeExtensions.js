@@ -24,10 +24,10 @@ class Directive {
   }
 
   getArguments() {
-    return this.directive.arguments;
+    return this.directive.arguments.map(argument => new Argument(argument));
   }
   getArgument(name) {
-    return this.getArguments().find(argument => argument.name.value === name);
+    return this.getArguments().find(argument => argument.getName() === name);
   }
 }
 
@@ -68,7 +68,15 @@ class Field {
     return !!this.getDirective('defaultValue');
   }
   getDefaultValue() {
-    return this.getDirective('defaultValue').getArgument('name').getValue().value;
+    return this.getDirective('defaultValue').getArgument('value').getValue().value;
+  }
+
+  hasMaxLength() {
+    return !!this.getDirective('maxLength');
+  }
+  getMaxLength() {
+    return this.hasMaxLength() ?
+      this.getDirective('maxLength').getArgument('value').getValue().value : 255;
   }
 }
 
@@ -108,10 +116,10 @@ class ObjectType {
     return this.getDirective('constraints').getArguments();
   }
   getConstraint(name) {
-    return this.getConstraints().find(constraint => constraint.name.value === name);
+    return this.getConstraints().find(constraint => constraint.getName() === name);
   }
   getUniqueConstraints() {
-    return this.getConstraint('unique').value.values.map((constraint) => {
+    return this.getConstraint('unique').getValue().values.map((constraint) => {
       const data = {};
       const name = constraint.fields.find(field => field.name.value === 'name');
       const fields = constraint.fields.find(field => field.name.value === 'fields');
