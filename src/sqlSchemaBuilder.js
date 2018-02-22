@@ -129,6 +129,10 @@ class SqlSchemaBuilder {
           generateForeignKey(table, field, referencedTable, field.isRequired());
         }).toString();
 
+        if (relationship.isSelfReferencing()) {
+          return [ ...sqls, aSide ];
+        }
+
         const bSide = knex.schema.table(relationship.objectTypeB.getName(), (table) => {
           const field = relationship.fieldB;
           const referencedTable = relationship.objectTypeA;

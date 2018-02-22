@@ -11,6 +11,10 @@ class Relation {
     this.name = name;
   }
 
+  isSelfReferencing() {
+    return this.objectTypeA === this.objectTypeB;
+  }
+
   isOneToOne() {
     return !this.fieldA.isList() && !this.fieldB.isList();
   }
@@ -21,7 +25,7 @@ class Relation {
   }
 
   getForeignKey() {
-    return this.fieldA.isList() ? this.fieldA : this.fieldB;
+    return this.fieldA.isList() ? this.fieldB : this.fieldA;
   }
 
   getForeignKeyTable() {
@@ -189,6 +193,8 @@ class ObjectType {
   constructor(document, objectType) {
     this.document = document;
     this.objectType = objectType;
+
+    this.fields = this.objectType.fields.map(field => new Field(this.document, this, field));
   }
 
   getName() {
@@ -203,7 +209,7 @@ class ObjectType {
   }
 
   getFields() {
-    return this.objectType.fields.map(field => new Field(this.document, this, field));
+    return this.fields;
   }
   getField(name) {
     return this.getFields().find(field => field.getName() === name);
@@ -230,9 +236,9 @@ class ObjectType {
   getRelationFields() {
     return this.getFields().filter(field => field.isRelation());
   }
-  findRelatedFields(objectType, relationName) {
+  findRelatedFields(objectType, relatedField, relationName) {
     let potentialFields = this.getRelationFields().filter(field =>
-      field.getTypeName() === objectType.getName());
+      field.getTypeName() === objectType.getName() && field !== relatedField);
 
     if (relationName) {
       potentialFields = potentialFields.filter(field =>
@@ -328,12 +334,18 @@ class EnumType {
 class Document {
   constructor(document) {
     this.document = document;
+
+    this.objectTypes = this.document.definitions
+      .filter(definition => definition.kind === 'ObjectTypeDefinition')
+      .map(objectType => new ObjectType(this, objectType));
+
+    this.enumTypes = this.document.definitions
+      .filter(definition => definition.kind === 'EnumTypeDefinition')
+      .map(enumType => new EnumType(this, enumType));
   }
 
   getObjectTypes() {
-    return this.document.definitions
-      .filter(definition => definition.kind === 'ObjectTypeDefinition')
-      .map(objectType => new ObjectType(this, objectType));
+    return this.objectTypes;
   }
   getObjectType(name) {
     return this.getObjectTypes().find(objectType => objectType.getName() === name);
@@ -343,9 +355,7 @@ class Document {
   }
 
   getEnumTypes() {
-    return this.document.definitions
-      .filter(definition => definition.kind === 'EnumTypeDefinition')
-      .map(enumType => new EnumType(this, enumType));
+    return this.enumTypes;
   }
   getEnumType(name) {
     return this.getEnumTypes().find(enumType => enumType.getName() === name);
@@ -373,7 +383,7 @@ class Document {
         const fieldA = objectTypeA.getField(fieldName);
         const objectTypeB = this.getObjectType(fields[fieldName].type);
         const relationName = fields[fieldName].name;
-        const potentialFields = objectTypeB.findRelatedFields(objectTypeA, relationName);
+        const potentialFields = objectTypeB.findRelatedFields(objectTypeA, fieldA, relationName);
 
         if (potentialFields.length < 1) {
           throw new Error(`Can't find matching field on table ${objectTypeB.getName()} for field ${fieldA.getName()}`);

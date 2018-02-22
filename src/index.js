@@ -9,7 +9,7 @@ const parseSchema = async (fileName) => {
   fs.readFile(fileName, (err, contents) => {
     const source = new Source(contents);
     const document = new Document(parse(source));
-    const sql = new SqlSchemaBuilder(document).generate().join('\n');
+    const sql = new SqlSchemaBuilder(document).generate().join(';\n');
     const projectRoot = `${path.dirname(__filename)}/..`;
 
     if (!fs.existsSync(`${projectRoot}/src/generated`)) {
