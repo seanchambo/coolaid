@@ -1,0 +1,21 @@
+create table `User` (`id` int unsigned not null auto_increment primary key, `name` varchar(200), `city` varchar(255) default 'Sean', `created_at` datetime, `updated_at` datetime);
+alter table `User` add unique `user_id_unique`(`id`);
+alter table `User` add unique `user_name_city_unique`(`name`, `city`);
+alter table `User` add index `user_id_city_index`(`id`, `city`);
+create table `Profile` (`id` int unsigned not null auto_increment primary key, `created_at` datetime, `updated_at` datetime);
+create table `Post` (`id` int unsigned not null auto_increment primary key, `position` enum('PG', 'SG') not null, `created_at` datetime, `updated_at` datetime);
+create table `Comment` (`id` int unsigned not null auto_increment primary key, `created_at` datetime, `updated_at` datetime);
+alter table `Post` add `user` int unsigned not null;
+alter table `Post` add constraint `post_user_foreign` foreign key (`user`) references `Post` (`id`);
+create table `UserComments` (`users` int unsigned not null, `comments` int unsigned not null);
+alter table `UserComments` add constraint `usercomments_users_foreign` foreign key (`users`) references `User` (`id`);
+alter table `UserComments` add constraint `usercomments_comments_foreign` foreign key (`comments`) references `Comment` (`id`);
+create table `LikedComments` (`likes` int unsigned not null, `liked_comments` int unsigned not null);
+alter table `LikedComments` add constraint `likedcomments_likes_foreign` foreign key (`likes`) references `User` (`id`);
+alter table `LikedComments` add constraint `likedcomments_liked_comments_foreign` foreign key (`liked_comments`) references `Comment` (`id`);
+alter table `Profile` add `user` int unsigned not null;
+alter table `Profile` add constraint `profile_user_foreign` foreign key (`user`) references `User` (`id`);
+alter table `User` add `profile` int unsigned not null;
+alter table `User` add constraint `user_profile_foreign` foreign key (`profile`) references `Profile` (`id`);
+alter table `User` add `parent` int unsigned not null;
+alter table `User` add constraint `user_parent_foreign` foreign key (`parent`) references `User` (`id`)

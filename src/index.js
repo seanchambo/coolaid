@@ -1,22 +1,35 @@
 import { parse, Source } from 'graphql';
 import * as fs from 'fs';
 import * as path from 'path';
+import express from 'express';
+import graphqlHTTP from 'express-graphql';
 
 import Document from './models/Document';
-import SqlSchemaBuilder from './sqlSchemaBuilder';
+import SqlSchemaGenerator from './generators/sql';
+import GraphQLGenerator from './generators/graphql';
 
 const parseSchema = async (fileName) => {
   fs.readFile(fileName, (err, contents) => {
     const source = new Source(contents);
     const document = new Document(parse(source));
-    const sql = new SqlSchemaBuilder(document).generate().join(';\n');
+    const sql = new SqlSchemaGenerator(document).generate().join(';\n');
+    const schema = new GraphQLGenerator(document).generate();
     const projectRoot = `${path.dirname(__filename)}/..`;
 
     if (!fs.existsSync(`${projectRoot}/src/generated`)) {
       fs.mkdirSync(`${projectRoot}/src/generated`);
     }
 
-    fs.writeFile(`${path.dirname(__filename)}/../src/generated/database.sql`, sql, { flag: 'w' });
+    fs.writeFile(`${projectRoot}/src/generated/database.sql`, sql, { flag: 'w' }, () => {
+      const app = express();
+      app.use('/graphql', graphqlHTTP({
+        schema,
+        graphiql: true,
+      }));
+
+      app.listen(4000);
+      console.log('Running a GraphQL API server at localhost:4000/graphql');
+    });
   });
 };
 

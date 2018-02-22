@@ -3,7 +3,7 @@ import generateForeignKey from './foreignKey';
 import generateTable from './table';
 
 
-class SqlSchemaBuilder {
+class SqlSchemaGenerator {
   constructor(document) {
     this.document = document;
   }
@@ -70,4 +70,4 @@ class SqlSchemaBuilder {
   }
 }
 
-export default SqlSchemaBuilder;
+export default SqlSchemaGenerator;

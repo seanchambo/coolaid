@@ -1,3 +1,5 @@
+import pluralize from 'pluralize';
+
 import Directive from './Directive';
 import Field from './Field';
 
@@ -71,6 +73,18 @@ class ObjectType {
   }
   hasUniqueConstraints() {
     return this.hasConstraints() && !!this.getConstraint('unique');
+  }
+  hasDescription() {
+    return this.hasOptions() && !!this.getOption('description');
+  }
+  hasPlural() {
+    return this.hasOptions() && !!this.getOption('plural');
+  }
+  getPlural() {
+    return this.hasPlural() ? this.getOption('plural').getValue().value : pluralize(this.getName());
+  }
+  getDescription() {
+    return this.getOption('description').getValue().value;
   }
   getOptions() {
     return this.getDirective('options').getArguments();
