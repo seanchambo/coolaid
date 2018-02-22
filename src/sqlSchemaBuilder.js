@@ -130,7 +130,7 @@ class SqlSchemaBuilder {
         }).toString();
 
         if (relationship.isSelfReferencing()) {
-          return [ ...sqls, aSide ];
+          return [...sqls, aSide];
         }
 
         const bSide = knex.schema.table(relationship.objectTypeB.getName(), (table) => {

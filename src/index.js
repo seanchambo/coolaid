@@ -2,7 +2,7 @@ import { parse, Source } from 'graphql';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { Document } from './nodeExtensions';
+import Document from './models/Document';
 import SqlSchemaBuilder from './sqlSchemaBuilder';
 
 const parseSchema = async (fileName) => {
