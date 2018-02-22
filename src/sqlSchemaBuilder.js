@@ -54,6 +54,10 @@ const generateUniqueConstraint = (table, constraint) => {
   table.unique(constraint.fields, constraint.name);
 };
 
+const generateIndex = (table, index) => {
+  table.index(index.fields, index.name, index.type);
+}
+
 const generateObjectTypeFields = (table, objectType) => {
   const scalarFields = objectType.getScalarTypeFields();
   const enumFields = objectType.getEnumFields();
@@ -71,6 +75,14 @@ const generateObjectTypeFields = (table, objectType) => {
 
     constraints.forEach((constraint) => {
       generateUniqueConstraint(table, constraint);
+    });
+  }
+
+  if (objectType.hasIndexes()) {
+    const indexes = objectType.getIndexes();
+
+    indexes.forEach((index) => {
+      generateIndex(table, index);
     });
   }
 

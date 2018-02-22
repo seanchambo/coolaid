@@ -229,20 +229,51 @@ class ObjectType {
     return potentialFields;
   }
 
+  hasOptions() {
+    return !!this.getDirective('options');
+  }
+  hasIndexes() {
+    return this.hasOptions() && !!this.getOption('indexes');
+  }
   hasConstraints() {
-    return !!this.getDirective('constraints');
+    return this.hasOptions() && !!this.getOption('constraints');
   }
   hasUniqueConstraints() {
     return this.hasConstraints() && !!this.getConstraint('unique');
   }
+  getOptions() {
+    return this.getDirective('options').getArguments();
+  }
+  getOption(name) {
+    return this.getOptions().find(option => option.getName() === name);
+  }
   getConstraints() {
-    return this.getDirective('constraints').getArguments();
+    return this.getOption('constraints').getValue().fields;
   }
   getConstraint(name) {
-    return this.getConstraints().find(constraint => constraint.getName() === name);
+    return this.getConstraints().find(constraintType => constraintType.name.value === name);
+  }
+  getIndexes() {
+    console.log(this.getOption('indexes'));
+    return this.getOption('indexes').getValue().values.map((index) => {
+      const data = {};
+      const name = index.fields.find(field => field.name.value === 'name');
+      const fields = index.fields.find(field => field.name.value === 'fields');
+      const type = index.fields.find(field => field.name.value === 'type');
+
+      if (name) {
+        data.name = name.name.value;
+      }
+      if (type) {
+        data.type = type.name.value;
+      }
+      data.fields = fields.value.values.map(value => value.value);
+
+      return data;
+    });
   }
   getUniqueConstraints() {
-    return this.getConstraint('unique').getValue().values.map((constraint) => {
+    return this.getConstraint('unique').value.values.map((constraint) => {
       const data = {};
       const name = constraint.fields.find(field => field.name.value === 'name');
       const fields = constraint.fields.find(field => field.name.value === 'fields');

@@ -1,5 +1,9 @@
 
-type User @constraints(unique: [{ fields: ["id"] }, { fields: ["name", "city"] }]) {
+type User
+  @options(
+    constraints: { unique: [{ fields: ["id"] }, { fields: ["name", "city"] }] },
+    indexes: [{ fields: ["id", "city"] }]
+  ) {
   id: ID!
   name: String @maxLength(value: 200)
   city: String @default(value: "Sean")
