@@ -214,6 +214,19 @@ class ObjectType {
   getEnumFields() {
     return this.getFields().filter(field => field.isEnum());
   }
+  getRelationships() {
+    const relationships = this.document.getRelationships();
+
+    return Object.keys(relationships).reduce((acc, key) => {
+      const relationship = relationships[key];
+
+      if (relationship.hasObjectType(this)) {
+        return [...acc, relationship];
+      }
+
+      return acc;
+    }, []);
+  }
   getRelationFields() {
     return this.getFields().filter(field => field.isRelation());
   }
