@@ -1,6 +1,6 @@
 import { isScalarType as checkIsScalarType } from './typeIdentifiers';
 
-const capitalizeFirstLetter = (string) =>  string.charAt(0).toUpperCase() + string.slice(1);
+const capitalizeFirstLetter = string => string.charAt(0).toUpperCase() + string.slice(1);
 
 class Relation {
   constructor(objectTypeA, fieldA, objectTypeB, fieldB, name) {
@@ -42,25 +42,25 @@ class Relation {
     if (this.isOneToOne()) {
       return [
         capitalizeFirstLetter(this.fieldA.getName()),
-        capitalizeFirstLetter(this.fieldB.getName())
+        capitalizeFirstLetter(this.fieldB.getName()),
       ].sort().join('');
     }
     if (this.isOneToMany()) {
       if (this.getForeignKey() === this.fieldA) {
         return [
           capitalizeFirstLetter(this.objectTypeA.getName()),
-          capitalizeFirstLetter(this.fieldA.getName())
+          capitalizeFirstLetter(this.fieldA.getName()),
         ].join('');
       }
       return [
         capitalizeFirstLetter(this.objectTypeB.getName()),
-        capitalizeFirstLetter(this.fieldB.getName())
+        capitalizeFirstLetter(this.fieldB.getName()),
       ].join('');
     }
 
     return [
       capitalizeFirstLetter(this.objectTypeA.getName()),
-      capitalizeFirstLetter(this.objectTypeB.getName())
+      capitalizeFirstLetter(this.objectTypeB.getName()),
     ].sort().join('');
   }
 
@@ -254,7 +254,6 @@ class ObjectType {
     return this.getConstraints().find(constraintType => constraintType.name.value === name);
   }
   getIndexes() {
-    console.log(this.getOption('indexes'));
     return this.getOption('indexes').getValue().values.map((index) => {
       const data = {};
       const name = index.fields.find(field => field.name.value === 'name');
@@ -354,11 +353,8 @@ class Document {
     const hierarchy = this.getRelationshipsHierarchy();
 
     return Object.keys(hierarchy).reduce((acc, key) => {
-      console.log(key);
       const objectTypeA = this.getObjectType(key);
       const fields = hierarchy[key];
-
-      console.log(fields);
 
       const relations = Object.keys(fields).reduce((acc1, fieldName) => {
         const fieldA = objectTypeA.getField(fieldName);

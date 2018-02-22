@@ -11,6 +11,7 @@ type User
   comments: [Comment!]! @relation(name: "UserComments")
   liked_comments: [Comment!]! @relation(name: "LikedComments")
   profile: Profile!
+  parent: User!
 }
 
 type Profile {

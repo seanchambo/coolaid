@@ -56,7 +56,7 @@ const generateUniqueConstraint = (table, constraint) => {
 
 const generateIndex = (table, index) => {
   table.index(index.fields, index.name, index.type);
-}
+};
 
 const generateObjectTypeFields = (table, objectType) => {
   const scalarFields = objectType.getScalarTypeFields();
@@ -89,6 +89,21 @@ const generateObjectTypeFields = (table, objectType) => {
   table.timestamps();
 };
 
+const generateForeignKey = (table, field, referencedTable, isRequired) => {
+  const newField = table
+    .integer(field.getName())
+    .unsigned();
+
+  if (isRequired) {
+    newField.notNullable();
+  }
+
+  table
+    .foreign(field.getName())
+    .references('id')
+    .inTable(referencedTable.getName());
+};
+
 class SqlSchemaBuilder {
   constructor(document) {
     this.document = document;
@@ -109,23 +124,15 @@ class SqlSchemaBuilder {
 
       if (relationship.isOneToOne()) {
         const aSide = knex.schema.table(relationship.objectTypeA.getName(), (table) => {
-          table
-            .integer(relationship.fieldA.getName())
-            .unsigned();
-          table
-            .foreign(relationship.fieldA.getName())
-            .references('id')
-            .inTable(relationship.objectTypeB.getName());
+          const field = relationship.fieldA;
+          const referencedTable = relationship.objectTypeB;
+          generateForeignKey(table, field, referencedTable, field.isRequired());
         }).toString();
 
         const bSide = knex.schema.table(relationship.objectTypeB.getName(), (table) => {
-          table
-            .integer(relationship.fieldB.getName())
-            .unsigned();
-          table
-            .foreign(relationship.fieldB.getName())
-            .references('id')
-            .inTable(relationship.objectTypeA.getName());
+          const field = relationship.fieldB;
+          const referencedTable = relationship.objectTypeA;
+          generateForeignKey(table, field, referencedTable, field.isRequired());
         }).toString();
 
         return [...sqls, aSide, bSide];
@@ -133,15 +140,10 @@ class SqlSchemaBuilder {
 
       if (relationship.isOneToMany()) {
         const field = relationship.getForeignKey();
+        const referencedTable = relationship.getForeignKeyTable();
 
         const sql = knex.schema.table(relationship.getForeignKeyTable().getName(), (table) => {
-          table
-            .integer(field.getName())
-            .unsigned();
-          table
-            .foreign(field.getName())
-            .references('id')
-            .inTable(relationship.getOppositeForeignKeyTable().getName());
+          generateForeignKey(table, field, referencedTable, field.isRequired());
         }).toString();
 
         return [...sqls, sql];
@@ -149,23 +151,8 @@ class SqlSchemaBuilder {
 
       if (relationship.isManyToMany()) {
         const sql = knex.schema.createTable(relationship.getName(), (table) => {
-          table
-            .integer(relationship.fieldA.getName())
-            .unsigned()
-            .notNullable();
-          table
-            .foreign(relationship.fieldA.getName())
-            .references('id')
-            .inTable(relationship.objectTypeB.getName());
-
-          table
-            .integer(relationship.fieldB.getName())
-            .unsigned()
-            .notNullable();
-          table
-            .foreign(relationship.fieldB.getName())
-            .references('id')
-            .inTable(relationship.objectTypeA.getName());
+          generateForeignKey(table, relationship.fieldA, relationship.objectTypeB, true);
+          generateForeignKey(table, relationship.fieldB, relationship.objectTypeA, true);
         }).toString();
 
         return [...sqls, sql];
