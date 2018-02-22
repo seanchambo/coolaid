@@ -1,5 +1,78 @@
 import { isScalarType as checkIsScalarType } from './typeIdentifiers';
 
+const capitalizeFirstLetter = (string) =>  string.charAt(0).toUpperCase() + string.slice(1);
+
+class Relation {
+  constructor(objectTypeA, fieldA, objectTypeB, fieldB, name) {
+    this.objectTypeA = objectTypeA;
+    this.objectTypeB = objectTypeB;
+    this.fieldA = fieldA;
+    this.fieldB = fieldB;
+    this.name = name;
+  }
+
+  isOneToOne() {
+    return !this.fieldA.isList() && !this.fieldB.isList();
+  }
+
+  isOneToMany() {
+    return (!this.fieldA.isList() && this.fieldB.isList()) ||
+      (this.fieldA.isList() && !this.fieldB.isList());
+  }
+
+  getForeignKey() {
+    return this.fieldA.isList() ? this.fieldA : this.fieldB;
+  }
+
+  getForeignKeyTable() {
+    return this.fieldA === this.getForeignKey() ? this.objectTypeA : this.objectTypeB;
+  }
+
+  getOppositeForeignKeyTable() {
+    return this.getForeignKeyTable() === this.objectTypeA ? this.objectTypeB : this.objectTypeA;
+  }
+
+  isManyToMany() {
+    return this.fieldA.isList() && this.fieldB.isList();
+  }
+
+  getName() {
+    if (this.name) { return this.name; }
+
+    if (this.isOneToOne()) {
+      return [
+        capitalizeFirstLetter(this.fieldA.getName()),
+        capitalizeFirstLetter(this.fieldB.getName())
+      ].sort().join('');
+    }
+    if (this.isOneToMany()) {
+      if (this.getForeignKey() === this.fieldA) {
+        return [
+          capitalizeFirstLetter(this.objectTypeA.getName()),
+          capitalizeFirstLetter(this.fieldA.getName())
+        ].join('');
+      }
+      return [
+        capitalizeFirstLetter(this.objectTypeB.getName()),
+        capitalizeFirstLetter(this.fieldB.getName())
+      ].join('');
+    }
+
+    return [
+      capitalizeFirstLetter(this.objectTypeA.getName()),
+      capitalizeFirstLetter(this.objectTypeB.getName())
+    ].sort().join('');
+  }
+
+  hasField(field) {
+    return this.fieldA === field || this.fieldB === field;
+  }
+
+  hasObjectType(objectType) {
+    return this.objectTypeA === objectType || this.objectTypeB === objectType;
+  }
+}
+
 class Argument {
   constructor(argument) {
     this.argument = argument;
@@ -68,25 +141,12 @@ class Field {
     return this.document.enumFieldOf(this);
   }
   isRelation() {
-    return !!this.document.relatedFieldOf(this.objectType, this);
-  }
-  getRelation() {
-    return this.document.relatedFieldOf(this.objectType, this);
+    return !!this.document.getObjectTypes().find(objectType =>
+      objectType.getName() === this.getTypeName());
   }
   getRelationTableName() {
-    return this.getRelation().objectType.getName();
-  }
-  isOneToOneRelation() {
-    return !this.isList() && !this.getRelation().isList();
-  }
-  isOneToManyRelation() {
-    return !this.isList() && this.getRelation().isList();
-  }
-  isManyToOneRelation() {
-    return this.isList() && !this.getRelation().isList();
-  }
-  isManyToManyRelation() {
-    return this.isList() && this.getRelation().isList();
+    return this.document.getObjectTypes().find(objectType =>
+      objectType.getName() === this.getTypeName()).getName();
   }
 
   getDirectives() {
@@ -97,10 +157,10 @@ class Field {
   }
 
   hasDefaultValue() {
-    return !!this.getDirective('defaultValue');
+    return !!this.getDirective('default');
   }
   getDefaultValue() {
-    return this.getDirective('defaultValue').getArgument('value').getValue().value;
+    return this.getDirective('default').getArgument('value').getValue().value;
   }
 
   hasMaxLength() {
@@ -114,11 +174,14 @@ class Field {
   hasRelationDirective() {
     return !!this.getDirective('relation');
   }
-  hasRelationName() {
+  hasRelationDirectiveName() {
     return !!(this.hasRelationDirective() && this.getDirective('relation').getArgument('name'));
   }
-  getRelationName() {
-    return this.getDirective('relation').getArgument('name').getValue().value;
+  getRelationDirectiveName() {
+    if (this.hasRelationDirective() && this.getDirective('relation').getArgument('name')) {
+      return this.getDirective('relation').getArgument('name').getValue().value;
+    }
+    return null;
   }
 }
 
@@ -153,6 +216,17 @@ class ObjectType {
   }
   getRelationFields() {
     return this.getFields().filter(field => field.isRelation());
+  }
+  findRelatedFields(objectType, relationName) {
+    let potentialFields = this.getRelationFields().filter(field =>
+      field.getTypeName() === objectType.getName());
+
+    if (relationName) {
+      potentialFields = potentialFields.filter(field =>
+        field.getRelationDirectiveName() === relationName);
+    }
+
+    return potentialFields;
   }
 
   hasConstraints() {
@@ -245,52 +319,54 @@ class Document {
     return this.getEnumType(fieldDefinition.getTypeName());
   }
 
-  relatedFieldOf(objectType, fieldDefinition) {
-    const relatedObjectType = this.getObjectType(fieldDefinition.getTypeName());
-    if (relatedObjectType) {
-      let field;
-      if (fieldDefinition.hasRelationName()) {
-        field = relatedObjectType.getFields().find(potentialField =>
-          potentialField.getTypeName() === objectType.getName() &&
-          potentialField.hasRelationName() &&
-          potentialField.getRelationName() === fieldDefinition.getRelationName());
-      } else {
-        field = relatedObjectType.getFields().find(potentialField =>
-          potentialField.getTypeName() === objectType.getName() && !potentialField.hasRelationName());
-      }
+  getRelationships() {
+    const hierarchy = this.getRelationshipsHierarchy();
 
-      if (!field) {
-        throw new Error(`${fieldDefinition.getName()} does not have a matching field on table ${relatedObjectType.getName()}`);
-      }
+    return Object.keys(hierarchy).reduce((acc, key) => {
+      console.log(key);
+      const objectTypeA = this.getObjectType(key);
+      const fields = hierarchy[key];
 
-      return field;
-    }
-    return null;
-  }
+      console.log(fields);
 
-  checkDuplicateRelationNames() {
-    const nameCounts = this.getRelationNames().reduce((acc, name) => {
-      if (acc[name]) { acc[name] += 1; } else { acc[name] = 1; }
-      return acc;
+      const relations = Object.keys(fields).reduce((acc1, fieldName) => {
+        const fieldA = objectTypeA.getField(fieldName);
+        const objectTypeB = this.getObjectType(fields[fieldName].type);
+        const relationName = fields[fieldName].name;
+        const potentialFields = objectTypeB.findRelatedFields(objectTypeA, relationName);
+
+        if (potentialFields.length < 1) {
+          throw new Error(`Can't find matching field on table ${objectTypeB.getName()} for field ${fieldA.getName()}`);
+        }
+        if (potentialFields.length > 1) {
+          throw new Error(`Ambigious relationships on tables ${objectTypeB.getName()} and ${objectTypeA.getName()}`);
+        }
+
+        const fieldB = potentialFields[0];
+
+        const relation = new Relation(objectTypeA, fieldA, objectTypeB, fieldB, relationName);
+
+        return { ...acc1, [relation.getName()]: relation };
+      }, {});
+
+      return { ...acc, ...relations };
     }, {});
-
-    Object.keys(nameCounts).forEach((key) => {
-      if (nameCounts[key] < 2) { throw new Error(`Ambigious relation name ${key}`); } else if (nameCounts[key] > 2) { throw new Error(`Duplicate relation name of ${key}`); }
-    });
   }
 
-  getRelationNames() {
-    let names = [];
+  getRelationshipsHierarchy() {
+    return this.getObjectTypes().reduce((hierarchy, objectType) => {
+      const fieldHierarchy = objectType.getRelationFields().reduce((acc, field) => {
+        const fieldInfo = {
+          type: field.getRelationTableName(),
+          name: field.getRelationDirectiveName(),
+          isList: field.isList(),
+        };
 
-    this.getObjectTypes().forEach((objectType) => {
-      const relationNames = objectType.getRelationFields()
-        .filter(field => field.hasRelationName())
-        .map(field => field.getRelationName());
+        return { ...acc, [field.getName()]: fieldInfo };
+      }, {});
 
-      names = [...names, ...relationNames];
-    });
-
-    return names;
+      return { ...hierarchy, [objectType.getName()]: fieldHierarchy };
+    }, {});
   }
 }
 

@@ -2,9 +2,16 @@
 type User @constraints(unique: [{ fields: ["id"] }, { fields: ["name", "city"] }]) {
   id: ID!
   name: String @maxLength(value: 200)
-  city: String @defaultValue(value: "Sean")
+  city: String @default(value: "Sean")
   posts: [Post!]!
-  comments: [Comment!]!
+  comments: [Comment!]! @relation(name: "UserComments")
+  liked_comments: [Comment!]! @relation(name: "LikedComments")
+  profile: Profile!
+}
+
+type Profile {
+  id: ID!
+  user: User!
 }
 
 type Post {
@@ -15,7 +22,8 @@ type Post {
 
 type Comment {
   id: ID!
-  users: [User!]!
+  users: [User!]! @relation(name: "UserComments")
+  likes: [User!]! @relation(name: "LikedComments")
 }
 
 enum Position {
