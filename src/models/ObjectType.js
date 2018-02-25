@@ -34,6 +34,9 @@ class ObjectType {
   getEnumFields() {
     return this.getFields().filter(field => field.isEnum());
   }
+  getPrimaryKeyFields() {
+    return this.getFields().filter(field => field.getTypeName() === 'ID');
+  }
   getRelationships() {
     const relationships = this.document.getRelationships();
 

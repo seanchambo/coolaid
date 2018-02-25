@@ -10,8 +10,8 @@ type User
   posts: [Post!]!
   comments: [Comment!]! @relation(name: "UserComments")
   liked_comments: [Comment!]! @relation(name: "LikedComments")
-  profile: Profile!
-  parent: User! @relation(name: "UserParents")
+  profile: Profile
+  parent: User @relation(name: "UserParents")
   children: [User!]! @relation(name: "UserParents")
 }
 

@@ -1,4 +1,4 @@
-const capitalizeFirstLetter = string => string.charAt(0).toUpperCase() + string.slice(1);
+import { capitalizeFirstLetter } from '../utils';
 
 class Relation {
   constructor(objectTypeA, fieldA, objectTypeB, fieldB, name) {
@@ -7,6 +7,19 @@ class Relation {
     this.fieldA = fieldA;
     this.fieldB = fieldB;
     this.name = name;
+  }
+
+  getOpposite(field) {
+    return field === this.fieldA ?
+      { field: this.fieldB, objectType: this.objectTypeB } :
+      { field: this.fieldA, objectType: this.objectTypeA };
+  }
+
+  getType(field) {
+    if (this.isOneToOne()) { return 'OneToOne'; }
+    if (this.isOneToMany() && field === this.getForeignKey()) { return 'ManyToOne'; }
+    if (this.isOneToMany() && field !== this.getForeignKey()) { return 'OneToMany'; }
+    return 'ManyToMany';
   }
 
   isSelfReferencing() {

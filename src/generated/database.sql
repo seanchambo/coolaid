@@ -15,7 +15,7 @@ alter table `LikedComments` add constraint `likedcomments_likes_foreign` foreign
 alter table `LikedComments` add constraint `likedcomments_liked_comments_foreign` foreign key (`liked_comments`) references `Comment` (`id`);
 alter table `Profile` add `user` int unsigned not null;
 alter table `Profile` add constraint `profile_user_foreign` foreign key (`user`) references `User` (`id`);
-alter table `User` add `profile` int unsigned not null;
+alter table `User` add `profile` int unsigned;
 alter table `User` add constraint `user_profile_foreign` foreign key (`profile`) references `Profile` (`id`);
-alter table `User` add `parent` int unsigned not null;
+alter table `User` add `parent` int unsigned;
 alter table `User` add constraint `user_parent_foreign` foreign key (`parent`) references `User` (`id`)

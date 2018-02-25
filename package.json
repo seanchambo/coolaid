@@ -55,7 +55,9 @@
     "express-graphql": "^0.6.12",
     "graphql": "^0.13.1",
     "knex": "^0.14.4",
+    "lodash.camelcase": "^4.3.0",
     "mysql": "^2.15.0",
+    "mysql2": "^1.5.2",
     "pluralize": "^7.0.0"
   }
 }

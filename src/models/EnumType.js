@@ -20,6 +20,12 @@ class EnumType {
   getValues() {
     return this.enumType.values.map(value => value.name.value);
   }
+  getValuesObject() {
+    return this.getValues().reduce((acc, value, index) => ({
+      ...acc,
+      [value]: { value: index },
+    }), {});
+  }
   getValue(name) {
     return this.getValues().find(value => value === name);
   }
