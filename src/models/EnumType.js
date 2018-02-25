@@ -21,7 +21,7 @@ class EnumType {
     return this.enumType.values.map(value => value.name.value);
   }
   getValuesObject() {
-    return this.getValues().reduce((acc, value, index) => ({
+    return this.getValues().reduce((acc, value) => ({
       ...acc,
       [value]: { value },
     }), {});

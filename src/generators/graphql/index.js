@@ -5,8 +5,22 @@ import knex from '../../connectors/database';
 import { getGraphqlType } from '../../typeIdentifiers';
 import { capitalizeFirstLetter } from '../../utils';
 
+function buildMultiWhereQuery(multiWhereArgs, and = true) {
+  return function () {
+    multiWhereArgs.forEach((whereArgs) => {
+      if (and) {
+        // eslint-disable-next-line no-use-before-define
+        this.where(buildWhereQuery(whereArgs));
+      } else {
+        // eslint-disable-next-line no-use-before-define
+        this.whereOr(buildWhereQuery(whereArgs));
+      }
+    });
+  };
+}
+
 function buildWhereQuery(whereArgs) {
-  return function() {
+  return function () {
     Object.keys(whereArgs).forEach((where) => {
       const value = whereArgs[where];
 
@@ -84,18 +98,6 @@ function buildWhereQuery(whereArgs) {
       this.where(where, value);
     });
   };
-}
-
-function buildMultiWhereQuery(multiWhereArgs, and = true) {
-  return function() {
-    multiWhereArgs.forEach((whereArgs) => {
-      if (and) {
-        this.where(buildWhereQuery(whereArgs));
-      } else {
-        this.whereOr(buildWhereQuery(whereArgs));
-      }
-    });
-  }
 }
 
 const buildQuery = (objectType, args) => {
@@ -204,7 +206,7 @@ class GraphQLGenerator {
       const type = this.enumTypes[field.getEnum().getName()];
 
       ['in'].forEach((filterType) => {
-        fieldFilters[`${field.getName()}_${filterType}`] = { type: new graphql.GraphQLList(type) }
+        fieldFilters[`${field.getName()}_${filterType}`] = { type: new graphql.GraphQLList(type) };
       });
 
       fieldFilters[field.getName()] = { type };
