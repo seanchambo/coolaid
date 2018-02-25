@@ -1,0 +1,162 @@
+type Comment {
+  id: Int
+  users: [User]
+  likes: [User]
+}
+
+enum CommentOrderByInput {
+  id_DESC
+  id_ASC
+}
+
+input CommentWhereInput {
+  id_lt: Int
+  id_lte: Int
+  id_gt: Int
+  id_gte: Int
+  id_in: [Int]
+  id: Int
+  _not: [CommentWhereInput]
+  _or: [CommentWhereInput]
+  _and: [CommentWhereInput]
+}
+
+input CommentWhereUniqueInput {
+  id: Int
+  _or: [CommentWhereUniqueInput]
+}
+
+enum Position {
+  PG
+  SG
+}
+
+type Post {
+  id: Int
+  position: String
+  user: User
+}
+
+enum PostOrderByInput {
+  id_DESC
+  id_ASC
+}
+
+input PostWhereInput {
+  id_lt: Int
+  id_lte: Int
+  id_gt: Int
+  id_gte: Int
+  id_in: [Int]
+  id: Int
+  position_in: [Position]
+  position: Position
+  _not: [PostWhereInput]
+  _or: [PostWhereInput]
+  _and: [PostWhereInput]
+}
+
+input PostWhereUniqueInput {
+  id: Int
+  _or: [PostWhereUniqueInput]
+}
+
+type Profile {
+  id: Int
+  user: User
+}
+
+enum ProfileOrderByInput {
+  id_DESC
+  id_ASC
+}
+
+input ProfileWhereInput {
+  id_lt: Int
+  id_lte: Int
+  id_gt: Int
+  id_gte: Int
+  id_in: [Int]
+  id: Int
+  _not: [ProfileWhereInput]
+  _or: [ProfileWhereInput]
+  _and: [ProfileWhereInput]
+}
+
+input ProfileWhereUniqueInput {
+  id: Int
+  _or: [ProfileWhereUniqueInput]
+}
+
+type Query {
+  User(where: UserWhereUniqueInput): User
+  Users(where: UserWhereInput, orderBy: UserOrderByInput): [User]
+  Profile(where: ProfileWhereUniqueInput): Profile
+  Profiles(where: ProfileWhereInput, orderBy: ProfileOrderByInput): [Profile]
+  Post(where: PostWhereUniqueInput): Post
+  Posts(where: PostWhereInput, orderBy: PostOrderByInput): [Post]
+  Comment(where: CommentWhereUniqueInput): Comment
+  Comments(where: CommentWhereInput, orderBy: CommentOrderByInput): [Comment]
+}
+
+type User {
+  id: Int
+  name: String
+  city: String
+  posts: [Post]
+  comments: [Comment]
+  liked_comments: [Comment]
+  profile: Profile
+  parent: User
+  children: [User]
+}
+
+input UserNameAndCityWhereUniqueInput {
+  name: String!
+  city: String!
+}
+
+enum UserOrderByInput {
+  id_DESC
+  id_ASC
+  name_DESC
+  name_ASC
+  city_DESC
+  city_ASC
+}
+
+input UserWhereInput {
+  id_lt: Int
+  id_lte: Int
+  id_gt: Int
+  id_gte: Int
+  id_in: [Int]
+  id: Int
+  name_lt: String
+  name_lte: String
+  name_gt: String
+  name_gte: String
+  name_in: [String]
+  name_starts_with: String
+  name_ends_with: String
+  name_contains: String
+  name: String
+  city_lt: String
+  city_lte: String
+  city_gt: String
+  city_gte: String
+  city_in: [String]
+  city_starts_with: String
+  city_ends_with: String
+  city_contains: String
+  city: String
+  _not: [UserWhereInput]
+  _or: [UserWhereInput]
+  _and: [UserWhereInput]
+}
+
+input UserWhereUniqueInput {
+  id: Int
+  name_and_city: UserNameAndCityWhereUniqueInput
+  _or: [UserWhereUniqueInput]
+}

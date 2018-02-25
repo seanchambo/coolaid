@@ -107,6 +107,11 @@ const buildQuery = (objectType, args) => {
     query.where(buildWhereQuery(args.where));
   }
 
+  if (args.orderBy) {
+    const [name, order] = args.orderBy;
+    query.orderBy(name, order);
+  }
+
   return query;
 };
 
@@ -148,7 +153,7 @@ class GraphQLGenerator {
           type: new graphql.GraphQLList(this.objectTypes[objectType.getName()]),
           args: {
             where: { type: this.whereInputs[objectType.getName()] },
-            orderBy: { type: new graphql.GraphQLList(this.orderByInputs[objectType.getName()]) },
+            orderBy: { type: this.orderByInputs[objectType.getName()] },
           },
           resolve: (_, args) => buildQuery(objectType, args),
         };
@@ -293,11 +298,9 @@ class GraphQLGenerator {
   }
 
   generateObjectTypeOrderByInput(objectType) {
-    let index = 0;
     const values = objectType.getScalarTypeFields().reduce((acc, field) => {
       const fieldOrders = ['DESC', 'ASC'].reduce((acc1, orderType) => {
-        index += 1;
-        return { ...acc1, [`${field.getName()}_${orderType}`]: { value: index - 1 } };
+        return { ...acc1, [`${field.getName()}_${orderType}`]: { value: [field.getName(), orderType] } };
       }, {});
       return { ...acc, ...fieldOrders };
     }, {});
