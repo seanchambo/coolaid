@@ -111,6 +111,7 @@ const buildQuery = (objectType, args) => {
 class GraphQLGenerator {
   constructor(document) {
     this.document = document;
+    this.enumTypes = {};
     this.whereInputs = {};
     this.whereUniqueInputs = {};
     this.orderByInputs = {};
@@ -119,6 +120,7 @@ class GraphQLGenerator {
   }
 
   generate() {
+    this.generateEnumTypes();
     this.generateWhereInputs();
     this.generateWhereUniqueInputs();
     this.generateOrderByInputs();
@@ -158,6 +160,15 @@ class GraphQLGenerator {
     });
   }
 
+  generateEnumTypes() {
+    this.document.getEnumTypes().forEach((enumType) => {
+      this.enumTypes[enumType.getName()] = new graphql.GraphQLEnumType({
+        name: enumType.getName(),
+        values: enumType.getValuesObject(),
+      });
+    });
+  }
+
   generateWhereInputs() {
     this.document.getObjectTypes().forEach((objectType) => {
       this.generateObjectTypeWhereInput(objectType);
@@ -165,7 +176,7 @@ class GraphQLGenerator {
   }
 
   generateObjectTypeWhereInput(objectType) {
-    const fields = objectType.getScalarTypeFields().reduce((acc, field) => {
+    const scalarFields = objectType.getScalarTypeFields().reduce((acc, field) => {
       const fieldFilters = {};
       const type = getGraphqlType(field.getTypeName());
 
@@ -188,6 +199,20 @@ class GraphQLGenerator {
       return { ...acc, ...fieldFilters };
     }, {});
 
+    const enumFields = objectType.getEnumFields().reduce((acc, field) => {
+      const fieldFilters = {};
+      const type = this.enumTypes[field.getEnum().getName()];
+
+      ['in'].forEach((filterType) => {
+        fieldFilters[`${field.getName()}_${filterType}`] = { type: new graphql.GraphQLList(type) }
+      });
+
+      fieldFilters[field.getName()] = { type };
+
+      return { ...acc, ...fieldFilters };
+    }, {});
+
+    const fields = { ...scalarFields, ...enumFields };
 
     const whereInputType = new graphql.GraphQLInputObjectType({
       name: `${objectType.getName()}WhereInput`,

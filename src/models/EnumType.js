@@ -23,7 +23,7 @@ class EnumType {
   getValuesObject() {
     return this.getValues().reduce((acc, value, index) => ({
       ...acc,
-      [value]: { value: index },
+      [value]: { value },
     }), {});
   }
   getValue(name) {
