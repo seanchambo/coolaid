@@ -112,6 +112,14 @@ const buildQuery = (objectType, args) => {
     query.orderBy(name, order);
   }
 
+  if (args.offset) {
+    query.offset(args.offset);
+  }
+
+  if (args.limit) {
+    query.limit(args.limit);
+  }
+
   return query;
 };
 
@@ -154,6 +162,8 @@ class GraphQLGenerator {
           args: {
             where: { type: this.whereInputs[objectType.getName()] },
             orderBy: { type: this.orderByInputs[objectType.getName()] },
+            limit: { type: graphql.GraphQLInt },
+            offset: { type: graphql.GraphQLInt },
           },
           resolve: (_, args) => buildQuery(objectType, args),
         };
@@ -183,6 +193,13 @@ class GraphQLGenerator {
   }
 
   generateObjectTypeWhereInput(objectType) {
+    let fields = {};
+
+    const whereInputType = new graphql.GraphQLInputObjectType({
+      name: `${objectType.getName()}WhereInput`,
+      fields: () => fields,
+    });
+
     const scalarFields = objectType.getScalarTypeFields().reduce((acc, field) => {
       const fieldFilters = {};
       const type = getGraphqlType(field.getTypeName());
@@ -219,12 +236,7 @@ class GraphQLGenerator {
       return { ...acc, ...fieldFilters };
     }, {});
 
-    const fields = { ...scalarFields, ...enumFields };
-
-    const whereInputType = new graphql.GraphQLInputObjectType({
-      name: `${objectType.getName()}WhereInput`,
-      fields: () => fields,
-    });
+    fields = { ...scalarFields, ...enumFields };
 
     ['not', 'or', 'and'].forEach((filterType) => {
       fields[`_${filterType}`] = { type: new graphql.GraphQLList(whereInputType) };
